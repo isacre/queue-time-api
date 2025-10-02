@@ -1,6 +1,6 @@
 import prisma from "../db";
 import bcrypt from "bcryptjs";
-import { generateToken } from "../utils/jwt";
+import { generateToken, verifyToken } from "../utils/jwt";
 import type { User } from "../generated/prisma";
 
 export async function createUser(user: {
@@ -35,4 +35,14 @@ export async function loginUser(user: {
 
   const token = generateToken({ id: User?.id });
   return { user: User, token };
+}
+
+export async function verifyTokenService(
+  token: string
+): Promise<{ user: User }> {
+  const payload = verifyToken(token);
+  if (!payload || typeof payload === "string") throw new Error("Invalid token");
+  const user = await prisma.user.findUnique({ where: { id: payload.id } });
+  if (!user) throw new Error("User not found");
+  return { user };
 }

@@ -1,5 +1,6 @@
 import prisma from "../db";
 import type { Queue, QueueItem } from "../generated/prisma";
+import { getIO } from "../sockets";
 
 export async function createQueue(
   queue: {
@@ -42,6 +43,7 @@ export async function addQueueItem(
   userId: number,
   item: { text: string; position: number }
 ): Promise<QueueItem> {
+  const socket = getIO();
   const queue = await prisma.queue.findUnique({ where: { id: queueId } });
   if (!queue) throw new Error("Queue not found");
   if (queue.userId !== userId)
@@ -50,6 +52,8 @@ export async function addQueueItem(
     data: { queueId, text: item.text, position: item.position },
   });
   if (!queueItem) throw new Error("Failed to add queue item");
+  const queueItems = await prisma.queueItem.findMany({ where: { queueId } });
+  socket.in(queueId.toString()).emit("queueItems", queueItems);
   return queueItem;
 }
 
@@ -83,5 +87,61 @@ export async function updateQueueItem(
     data: { text: item.text, position: item.position },
   });
   if (!queueItem) throw new Error("Queue item not found");
+  return queueItem;
+}
+
+export async function nextQueueItem(
+  queueId: number,
+  userId: number
+): Promise<QueueItem | null> {
+  const queue = await prisma.queue.findUnique({ where: { id: queueId } });
+  if (!queue) throw new Error("Queue not found");
+  if (queue.userId !== userId)
+    throw new Error("You are not allowed to manage this queue");
+
+  // Find the first item (lowest position)
+  const firstItem = await prisma.queueItem.findFirst({
+    where: { queueId },
+    orderBy: { position: "asc" },
+  });
+
+  if (!firstItem) {
+    return null;
+  }
+  await prisma.queueItem.delete({ where: { id: firstItem.id } });
+  const queueItems = await prisma.queueItem.findMany({ where: { queueId } });
+  const io = getIO();
+  io.to(queueId.toString()).emit("queueItems", queueItems);
+  return firstItem;
+}
+
+export async function addQueueItemToEnd(
+  queueId: number,
+  userId: number,
+  item: string
+): Promise<QueueItem> {
+  const queue = await prisma.queue.findUnique({ where: { id: queueId } });
+  if (!queue) throw new Error("Queue not found");
+  if (queue.userId !== userId)
+    throw new Error("You are not allowed to add item to this queue");
+
+  // Find the highest position to add at the end
+  const lastItem = await prisma.queueItem.findFirst({
+    where: { queueId },
+    orderBy: { position: "desc" },
+  });
+
+  const newPosition = lastItem ? lastItem.position + 1 : 1;
+
+  const queueItem = await prisma.queueItem.create({
+    data: { queueId, text: item, position: newPosition },
+  });
+
+  if (!queueItem) throw new Error("Failed to add queue item");
+
+  const queueItems = await prisma.queueItem.findMany({ where: { queueId } });
+  const io = getIO();
+  io.to(queueId.toString()).emit("queueItems", queueItems);
+
   return queueItem;
 }

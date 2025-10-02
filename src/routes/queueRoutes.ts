@@ -7,6 +7,8 @@ import {
   deleteQueue,
   addQueueItem,
   removeQueueItem,
+  nextQueueItem,
+  addQueueItemToEnd,
 } from "../controllers/queueController";
 import { authMiddleware } from "../middlewares/authMiddleware";
 
@@ -127,6 +129,71 @@ import { authMiddleware } from "../middlewares/authMiddleware";
  *         required: true
  *         description: ID da fila
  */
+
+/**
+ * @swagger
+ * /queue/{id}/next:
+ *   post:
+ *     summary: Processa o próximo item da fila (remove o primeiro)
+ *     tags: [Queue]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID da fila
+ *     responses:
+ *       200:
+ *         description: Próximo item processado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 item:
+ *                   type: object
+ *                   nullable: true
+ *       400:
+ *         description: Erro ao processar próximo item
+ */
+
+/**
+ * @swagger
+ * /queue/{id}/add-to-end:
+ *   post:
+ *     summary: Adiciona um item ao final da fila
+ *     tags: [Queue]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID da fila
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               text:
+ *                 type: string
+ *                 example: "Novo item da fila"
+ *     responses:
+ *       200:
+ *         description: Item adicionado ao final da fila com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 item:
+ *                   type: object
+ *       400:
+ *         description: Erro ao adicionar item
+ */
 const router = Router();
 
 router.post("/", authMiddleware, createQueue);
@@ -136,5 +203,9 @@ router.post("/:id", authMiddleware, addQueueItem);
 router.delete("/:id", authMiddleware, removeQueueItem);
 router.put("/:id", authMiddleware, updateQueueItem);
 router.get("/:id", getQueueById);
+
+// New queue position management routes
+router.post("/:id/next", authMiddleware, nextQueueItem);
+router.post("/:id/add-to-end", authMiddleware, addQueueItemToEnd);
 
 export default router;
