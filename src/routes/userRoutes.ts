@@ -1,5 +1,19 @@
 import { Router } from "express";
-import { register, login, verifyToken } from "../controllers/userController";
+import {
+  register,
+  login,
+  verifyToken,
+  logout,
+} from "../controllers/userController";
+
+const router = Router();
+
+router.post("/register", register);
+router.post("/login", login);
+router.post("/verify-token", verifyToken);
+router.post("/logout", logout);
+
+export default router;
 
 /**
  * @swagger
@@ -62,11 +76,3 @@ import { register, login, verifyToken } from "../controllers/userController";
  *       400:
  *         description: Email ou senha inválidos
  */
-
-const router = Router();
-
-router.post("/register", register);
-router.post("/login", login);
-router.post("/verify-token", verifyToken);
-
-export default router;

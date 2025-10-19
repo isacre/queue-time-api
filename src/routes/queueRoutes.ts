@@ -11,6 +11,21 @@ import {
   addQueueItemToEnd,
 } from "../controllers/queueController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+const router = Router();
+
+router.post("/", authMiddleware, createQueue);
+router.get("/", authMiddleware, getQueues);
+router.delete("/:id", authMiddleware, deleteQueue);
+router.post("/:id", authMiddleware, addQueueItem);
+router.delete("/:id", authMiddleware, removeQueueItem);
+router.put("/:id", authMiddleware, updateQueueItem);
+router.get("/:id", getQueueById);
+
+// New queue position management routes
+router.post("/:id/next", authMiddleware, nextQueueItem);
+router.post("/:id/add-to-end", authMiddleware, addQueueItemToEnd);
+
+export default router;
 
 /**
  * @swagger
@@ -194,18 +209,3 @@ import { authMiddleware } from "../middlewares/authMiddleware";
  *       400:
  *         description: Erro ao adicionar item
  */
-const router = Router();
-
-router.post("/", authMiddleware, createQueue);
-router.get("/", authMiddleware, getQueues);
-router.delete("/:id", authMiddleware, deleteQueue);
-router.post("/:id", authMiddleware, addQueueItem);
-router.delete("/:id", authMiddleware, removeQueueItem);
-router.put("/:id", authMiddleware, updateQueueItem);
-router.get("/:id", getQueueById);
-
-// New queue position management routes
-router.post("/:id/next", authMiddleware, nextQueueItem);
-router.post("/:id/add-to-end", authMiddleware, addQueueItemToEnd);
-
-export default router;

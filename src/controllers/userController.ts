@@ -65,3 +65,12 @@ export async function verifyToken(req: Request, res: Response) {
     });
   }
 }
+
+export async function logout(req: Request, res: Response) {
+  res.clearCookie("token", {
+    httpOnly: true,
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+  });
+  res.status(200).json({ message: "User logged out successfully" });
+}
